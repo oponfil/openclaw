@@ -6,7 +6,7 @@
   },
   "channels": {
     "telegram": {
-      "allowFrom": ["ponfilenok"]
+      "allowFrom": ["120495009"]
     }
   }
 }
