@@ -51,15 +51,15 @@ RUN pnpm ui:build
 
 ENV NODE_ENV=production
 
+# Railway/cloud: pre-seed config to disable device pairing (no Shell to run devices approve)
+USER root
+RUN mkdir -p /app/.openclaw
+COPY config/openclaw.railway.json /app/.openclaw/openclaw.json
+RUN chown -R node:node /app/.openclaw
+
 # Security hardening: Run as non-root user
-# The node:22-bookworm image includes a 'node' user (uid 1000)
-# This reduces the attack surface by preventing container escape via root privileges
 USER node
 
-# Start gateway server with default config.
-# Binds to loopback (127.0.0.1) by default for security.
-#
-# For container platforms requiring external health checks:
-#   1. Set OPENCLAW_GATEWAY_TOKEN or OPENCLAW_GATEWAY_PASSWORD env var
-#   2. Override CMD: ["node","openclaw.mjs","gateway","--allow-unconfigured","--bind","lan"]
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured"]
+# Start gateway server. --bind lan + --port 8080 for Railway healthcheck and Variables PORT.
+# Config at /app/.openclaw (use OPENCLAW_STATE_DIR=/app/.openclaw when no volume).
+CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]
