@@ -3,5 +3,10 @@
     "controlUi": {
       "dangerouslyDisableDeviceAuth": true
     }
+  },
+  "channels": {
+    "telegram": {
+      "allowFrom": ["ponfilenok"]
+    }
   }
 }
