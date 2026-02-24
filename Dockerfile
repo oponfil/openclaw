@@ -57,9 +57,13 @@ RUN mkdir -p /app/.openclaw
 COPY config/openclaw.railway.json /app/.openclaw/openclaw.json
 RUN chown -R node:node /app/.openclaw
 
-# Security hardening: Run as non-root user
-USER node
+# Optional: allow container to install browser at runtime when run as root.
+RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gosu && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN chmod +x /app/scripts/docker/entrypoint-with-browser.sh
+ENTRYPOINT ["/app/scripts/docker/entrypoint-with-browser.sh"]
 
-# Start gateway server. --bind lan + --port 8080 for Railway healthcheck and Variables PORT.
-# Config at /app/.openclaw (use OPENCLAW_STATE_DIR=/app/.openclaw when no volume).
+# Run as root by default so entrypoint can install Chromium on first start, then drops to node.
+USER root
+
+# Start gateway server. Entrypoint runs as root, installs Chromium if needed, then exec's as node.
 CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]

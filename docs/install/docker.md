@@ -186,14 +186,14 @@ Notes:
 
 ### Power-user / full-featured container (opt-in)
 
-The default Docker image is **security-first** and runs as the non-root `node`
-user. This keeps the attack surface small, but it means:
+The default Docker image runs the **entrypoint as root** so that on first start it can install Chromium and Xvfb into `/home/node/.cache/ms-playwright`, then the gateway process runs as the `node` user. This avoids needing build-time browser install or manual `playwright install` when you have no sudo inside the container.
 
-- no system package installs at runtime
-- no Homebrew by default
-- no bundled Chromium/Playwright browsers
+- First start: entrypoint installs browser (~60–90 s), then drops to `node` and starts the gateway.
+- Later starts: if the browser cache exists, install is skipped. Persist `/home/node` (e.g. `OPENCLAW_HOME_VOLUME`) so the cache survives container recreation.
 
-If you want a more full-featured container, use these opt-in knobs:
+If you want a stricter security-first image (no root at all, no browser install), build with a custom Dockerfile that sets `USER node` and omits the entrypoint.
+
+Additional opt-in knobs:
 
 1. **Persist `/home/node`** so browser downloads and tool caches survive:
 

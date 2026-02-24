@@ -20,4 +20,11 @@ describe("Dockerfile", () => {
     );
     expect(dockerfile).toContain("apt-get install -y --no-install-recommends xvfb");
   });
+
+  it("includes entrypoint for optional runtime browser install when run as root", async () => {
+    const dockerfile = await readFile(dockerfilePath, "utf8");
+    expect(dockerfile).toContain("gosu");
+    expect(dockerfile).toContain("entrypoint-with-browser.sh");
+    expect(dockerfile).toMatch(/ENTRYPOINT\s+\[.*entrypoint-with-browser\.sh.*\]/);
+  });
 });
