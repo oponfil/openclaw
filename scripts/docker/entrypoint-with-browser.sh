@@ -10,7 +10,14 @@ fi
 
 if [ "$RUN_AS_ROOT" = "1" ]; then
   CACHE_DIR="${PLAYWRIGHT_BROWSERS_PATH:-/home/node/.cache/ms-playwright}"
-  if [ ! -d "$CACHE_DIR/chromium-" ]; then
+  chromium_installed=false
+  for d in "$CACHE_DIR"/chromium-*; do
+    if [ -d "$d" ]; then
+      chromium_installed=true
+      break
+    fi
+  done
+  if [ "$chromium_installed" = false ]; then
     echo "OpenClaw: installing Chromium and Xvfb..."
     apt-get update -qq
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends xvfb
