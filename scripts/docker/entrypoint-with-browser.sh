@@ -32,16 +32,17 @@ if [ "$RUN_AS_ROOT" = "1" ]; then
 fi
 
 # So cloud health checks (e.g. Railway) reach the app. gosu does not pass env to the
-# child; we must pass PORT explicitly or the gateway would listen on 8080 while the
-# platform probes a different port and health check fails.
+# child; we must pass PORT and PATH explicitly or the gateway would listen on 8080
+# and "node" would not be found in start-gateway.sh.
 # CMD is a shell script (start-gateway.sh); run it with sh, not node, so the gateway starts.
 export PORT="${PORT:-8080}"
+SAFE_PATH="/usr/local/bin:/usr/bin:/bin:${PATH:-}"
 
 if [ "$RUN_AS_ROOT" = "1" ]; then
   if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ]; then
-    exec gosu node env PORT="$PORT" PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_PATH" /bin/sh "$@"
+    exec gosu node env PORT="$PORT" PATH="$SAFE_PATH" PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_PATH" /bin/sh "$@"
   else
-    exec gosu node env PORT="$PORT" /bin/sh "$@"
+    exec gosu node env PORT="$PORT" PATH="$SAFE_PATH" /bin/sh "$@"
   fi
 else
   exec "$@"
