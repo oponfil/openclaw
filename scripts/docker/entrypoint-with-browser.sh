@@ -31,11 +31,17 @@ if [ "$RUN_AS_ROOT" = "1" ]; then
   export PLAYWRIGHT_BROWSERS_PATH="$CACHE_DIR"
 fi
 
-# So cloud health checks (e.g. Railway) reach the app; gosu may not pass all env.
+# So cloud health checks (e.g. Railway) reach the app. gosu does not pass env to the
+# child; we must pass PORT explicitly or the gateway would listen on 8080 while the
+# platform probes a different port and health check fails.
 export PORT="${PORT:-8080}"
 
 if [ "$RUN_AS_ROOT" = "1" ]; then
-  exec gosu node "$@"
+  if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ]; then
+    exec env PORT="$PORT" PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_PATH" gosu node "$@"
+  else
+    exec env PORT="$PORT" gosu node "$@"
+  fi
 else
   exec "$@"
 fi

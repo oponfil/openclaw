@@ -16,6 +16,7 @@
 | Пользователь по умолчанию | `node` | `USER root`, чтобы entrypoint при первом запуске мог установить Chromium, затем процесс запускается от `node` через `gosu` |
 | Порт шлюза | 18789 (loopback) | **8080** по умолчанию; в облаке — переменная **PORT** (entrypoint и start-gateway.sh пробрасывают её; health check на этом порту). При необходимости в Railway Variables задать **PORT=8080**. |
 | Привязка | loopback (127.0.0.1) по умолчанию | `--bind lan` (0.0.0.0), чтобы шлюз был доступен снаружи контейнера |
+| PORT при gosu | — | В entrypoint переменная **PORT** явно передаётся в процесс через `env PORT="$PORT" gosu node ...`, так как gosu не передаёт окружение дочернему процессу; иначе gateway слушал бы 8080, а Railway проверял бы другой порт и health check падал бы. |
 | HEALTHCHECK | На порт 18789 | На порт **8080** (`http://127.0.0.1:8080/healthz`) |
 | CMD | `node openclaw.mjs gateway --allow-unconfigured` | `node openclaw.mjs gateway --allow-unconfigured --bind lan --port 8080` |
 | Плагин ClawRouter | Нет | Установка в образ: `openclaw plugins install @blockrun/clawrouter --pin` (модель по умолчанию `blockrun/auto`) |
