@@ -10,7 +10,7 @@
 
 | Что | Upstream | Наш форк |
 |-----|----------|----------|
-| Конфиг по умолчанию | Нет предустановленного конфига в образе | Копируем `config/openclaw.railway.json` в `/app/.openclaw/openclaw.json` при сборке (см. [1.2](#12-configopenclawrailwayjson)) |
+| Конфиг по умолчанию | Нет предустановленного конфига в образе | Сначала копируем `config/openclaw.railway.build.json` (минимальный, без `plugins.allow`), ставим ClawRouter, затем подменяем на `config/openclaw.railway.json` (см. [1.2](#12-configopenclawrailwayjson)) |
 | Entrypoint | Нет (прямой `CMD`) | `ENTRYPOINT ["/app/scripts/docker/entrypoint-with-browser.sh"]` |
 | Установка в образе | — | Устанавливаем `gosu` для переключения user в entrypoint |
 | Пользователь по умолчанию | `node` | `USER root`, чтобы entrypoint при первом запуске мог установить Chromium, затем процесс запускается от `node` через `gosu` |
@@ -70,7 +70,7 @@
 ## 4. Краткий чеклист наших отличий
 
 - [ ] **Dockerfile**: предустановка `config/openclaw.railway.json`, установка плагина **ClawRouter** (`openclaw plugins install @blockrun/clawrouter --pin`), gosu, entrypoint `entrypoint-with-browser.sh`, `USER root`, порт **8080**, `--bind lan`, HEALTHCHECK на 8080.
-- [ ] **config/openclaw.railway.json**: наш конфиг (отключение device auth для облака, настройки каналов, **plugins** + **clawrouter**, модель по умолчанию `blockrun/auto`).
+- [ ] **config/openclaw.railway.json** и **config/openclaw.railway.build.json**: наш конфиг (build — минимальный для установки плагина; railway.json — полный: device auth, каналы, clawrouter, `blockrun/auto`).
 - [ ] **scripts/docker/entrypoint-with-browser.sh**: установка Chromium при первом запуске от root, запуск CMD от `node` через gosu.
 - [ ] **src/dockerfile.test.ts**: тест на наличие entrypoint/gosu в Dockerfile.
 
