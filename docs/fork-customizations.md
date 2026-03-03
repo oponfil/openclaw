@@ -11,12 +11,12 @@
 | Что | Upstream | Наш форк |
 |-----|----------|----------|
 | Конфиг по умолчанию | Нет предустановленного конфига в образе | Сначала копируем `config/openclaw.railway.build.json` (минимальный, без `plugins.allow`), ставим ClawRouter, затем подменяем на `config/openclaw.railway.json` (см. [1.2](#12-configopenclawrailwayjson)) |
-| Entrypoint | Нет (прямой `CMD`) | `ENTRYPOINT ["/app/scripts/docker/entrypoint-with-browser.sh"]` |
-| Установка в образе | — | Устанавливаем `gosu`; **Chromium + Xvfb** ставятся при сборке (`OPENCLAW_INSTALL_BROWSER=1`), чтобы контейнер в Railway стартовал за секунды и health check проходил (без этого при первом запуске ставится браузер 1–2 мин). |
-| Пользователь по умолчанию | `node` | `USER root`, чтобы entrypoint при первом запуске мог установить Chromium, затем процесс запускается от `node` через `gosu` |
-| Порт шлюза | 18789 (loopback) | **8080** по умолчанию; в облаке — переменная **PORT** (entrypoint и start-gateway.sh пробрасывают её; health check на этом порту). При необходимости в Railway Variables задать **PORT=8080**. |
+| Entrypoint | Нет (прямой `CMD`) | Не используем entrypoint в Railway-образе; прямой `CMD ["/app/scripts/docker/start-gateway.sh"]` |
+| Установка в образе | — | **Chromium + Xvfb** ставятся при сборке (`OPENCLAW_INSTALL_BROWSER=1`), чтобы контейнер в Railway стартовал за секунды и не зависел от runtime-установки браузера |
+| Пользователь по умолчанию | `node` | `USER node` (прямой запуск gateway без root+gosu) |
+| Порт шлюза | 18789 (loopback) | **8080** по умолчанию; в облаке — переменная **PORT** (её подставляет `start-gateway.sh`; health check на этом порту) |
 | Привязка | loopback (127.0.0.1) по умолчанию | `--bind lan` (0.0.0.0), чтобы шлюз был доступен снаружи контейнера |
-| Env при gosu | — | В entrypoint через `env ... gosu node /bin/sh "$@"` явно передаём **PORT**, **PATH**, **NODE_ENV**, **OPENCLAW_STATE_DIR** (и при необходимости **PLAYWRIGHT_BROWSERS_PATH**), так как gosu не передаёт окружение дочернему процессу; иначе gateway не найдёт конфиг в `/app/.openclaw` или порт будет неверный. |
+| Env при gosu | — | Не применяется (убран runtime `gosu`-слой для Railway-пути запуска) |
 | HEALTHCHECK | На порт 18789 | На порт **8080** (`http://127.0.0.1:8080/healthz`) |
 | CMD | `node openclaw.mjs gateway --allow-unconfigured` | `node openclaw.mjs gateway --allow-unconfigured --bind lan --port 8080` |
 | Плагин ClawRouter | Нет | Установка в образ: `openclaw plugins install @blockrun/clawrouter --pin` (модель по умолчанию `blockrun/auto`) |
@@ -34,12 +34,9 @@
 
 ### 1.3 scripts/docker/entrypoint-with-browser.sh
 
-Скрипт entrypoint для контейнера:
-
-- Если контейнер запущен от **root**: при первом запуске при необходимости ставит Chromium и Xvfb в кэш пользователя `node` (`PLAYWRIGHT_BROWSERS_PATH`), затем выполняет `CMD` от пользователя `node` через `gosu`.
-- Если контейнер запущен не от root — просто выполняет `CMD` как есть.
-
-Так мы можем не включать браузер в образ при сборке (`OPENCLAW_INSTALL_BROWSER`), а установить его при первом старте (например, на Railway), когда нет интерактивного `docker run`.
+Скрипт сохранён в репозитории для совместимости/локальных сценариев, но
+**в Railway-пути запуска не используется**. Для стабильности деплоя gateway
+запускается напрямую под `node` через `start-gateway.sh`.
 
 ---
 
