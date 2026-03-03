@@ -12,9 +12,9 @@
 |-----|----------|----------|
 | Конфиг по умолчанию | Нет предустановленного конфига в образе | Сначала копируем `config/openclaw.railway.build.json` (минимальный, без `plugins.allow`), ставим ClawRouter, затем подменяем на `config/openclaw.railway.json` (см. [1.2](#12-configopenclawrailwayjson)) |
 | Entrypoint | Нет (прямой `CMD`) | `ENTRYPOINT ["/app/scripts/docker/entrypoint-with-browser.sh"]` |
-| Установка в образе | — | Устанавливаем `gosu` для переключения user в entrypoint |
+| Установка в образе | — | Устанавливаем `gosu`; **Chromium + Xvfb** ставятся при сборке (`OPENCLAW_INSTALL_BROWSER=1`), чтобы контейнер в Railway стартовал за секунды и health check проходил (без этого при первом запуске ставится браузер 1–2 мин). |
 | Пользователь по умолчанию | `node` | `USER root`, чтобы entrypoint при первом запуске мог установить Chromium, затем процесс запускается от `node` через `gosu` |
-| Порт шлюза | 18789 (loopback) | **8080** по умолчанию; в облаке — переменная **PORT** (entrypoint и start-gateway.sh пробрасывают её; health check на этом порту). Если проверка падает: в Railway Variables задать **PORT=8080** и при необходимости увеличить Health Check Timeout (при первом деплое ставится Chromium, запуск может занять 1–2 мин). |
+| Порт шлюза | 18789 (loopback) | **8080** по умолчанию; в облаке — переменная **PORT** (entrypoint и start-gateway.sh пробрасывают её; health check на этом порту). При необходимости в Railway Variables задать **PORT=8080**. |
 | Привязка | loopback (127.0.0.1) по умолчанию | `--bind lan` (0.0.0.0), чтобы шлюз был доступен снаружи контейнера |
 | HEALTHCHECK | На порт 18789 | На порт **8080** (`http://127.0.0.1:8080/healthz`) |
 | CMD | `node openclaw.mjs gateway --allow-unconfigured` | `node openclaw.mjs gateway --allow-unconfigured --bind lan --port 8080` |
