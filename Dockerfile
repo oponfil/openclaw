@@ -128,14 +128,14 @@ RUN chown -R node:node /app/.openclaw
 
 # Optional: allow container to install browser at runtime when run as root.
 RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gosu && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN chmod +x /app/scripts/docker/entrypoint-with-browser.sh
+RUN chmod +x /app/scripts/docker/entrypoint-with-browser.sh /app/scripts/docker/start-gateway.sh
 ENTRYPOINT ["/app/scripts/docker/entrypoint-with-browser.sh"]
 
 # Run as root by default so entrypoint can install Chromium on first start, then drops to node.
 USER root
 
 # Start gateway server. Entrypoint runs as root, installs Chromium if needed, then exec's as node.
-# Use PORT from env so Railway health check (which probes $PORT) reaches the app; default 8080.
+# start-gateway.sh sets PORT from env (Railway probes $PORT) and starts the gateway.
 HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \
   CMD node -e "const p=process.env.PORT||'8080'; fetch('http://127.0.0.1:'+p+'/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["/bin/sh", "-c", "exec node openclaw.mjs gateway --allow-unconfigured --bind lan --port ${PORT:-8080}"]
+CMD ["/app/scripts/docker/start-gateway.sh"]

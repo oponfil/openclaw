@@ -31,6 +31,9 @@ if [ "$RUN_AS_ROOT" = "1" ]; then
   export PLAYWRIGHT_BROWSERS_PATH="$CACHE_DIR"
 fi
 
+# So cloud health checks (e.g. Railway) reach the app; gosu may not pass all env.
+export PORT="${PORT:-8080}"
+
 if [ "$RUN_AS_ROOT" = "1" ]; then
   exec gosu node "$@"
 else
