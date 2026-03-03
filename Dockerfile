@@ -135,7 +135,7 @@ ENTRYPOINT ["/app/scripts/docker/entrypoint-with-browser.sh"]
 USER root
 
 # Start gateway server. Entrypoint runs as root, installs Chromium if needed, then exec's as node.
-# Health check uses port 8080 (Railway default).
+# Use PORT from env so Railway health check (which probes $PORT) reaches the app; default 8080.
 HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:8080/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]
+  CMD node -e "const p=process.env.PORT||'8080'; fetch('http://127.0.0.1:'+p+'/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["/bin/sh", "-c", "exec node openclaw.mjs gateway --allow-unconfigured --bind lan --port ${PORT:-8080}"]

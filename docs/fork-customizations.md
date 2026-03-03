@@ -14,7 +14,7 @@
 | Entrypoint | Нет (прямой `CMD`) | `ENTRYPOINT ["/app/scripts/docker/entrypoint-with-browser.sh"]` |
 | Установка в образе | — | Устанавливаем `gosu` для переключения user в entrypoint |
 | Пользователь по умолчанию | `node` | `USER root`, чтобы entrypoint при первом запуске мог установить Chromium, затем процесс запускается от `node` через `gosu` |
-| Порт шлюза | 18789 (loopback) | **8080** (удобно для Railway и облачных платформ) |
+| Порт шлюза | 18789 (loopback) | **8080** по умолчанию; в облаке используется переменная **PORT** (Railway инжектирует её; health check идёт на этот порт) |
 | Привязка | loopback (127.0.0.1) по умолчанию | `--bind lan` (0.0.0.0), чтобы шлюз был доступен снаружи контейнера |
 | HEALTHCHECK | На порт 18789 | На порт **8080** (`http://127.0.0.1:8080/healthz`) |
 | CMD | `node openclaw.mjs gateway --allow-unconfigured` | `node openclaw.mjs gateway --allow-unconfigured --bind lan --port 8080` |
