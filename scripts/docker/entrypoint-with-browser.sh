@@ -31,18 +31,25 @@ if [ "$RUN_AS_ROOT" = "1" ]; then
   export PLAYWRIGHT_BROWSERS_PATH="$CACHE_DIR"
 fi
 
-# So cloud health checks (e.g. Railway) reach the app. gosu does not pass env to the
-# child; we must pass PORT and PATH explicitly or the gateway would listen on 8080
-# and "node" would not be found in start-gateway.sh.
-# CMD is a shell script (start-gateway.sh); run it with sh, not node, so the gateway starts.
+# gosu does not pass env to the child; pass all vars the gateway needs or it will
+# listen on the wrong port, not find node, or not find config at /app/.openclaw.
 export PORT="${PORT:-8080}"
 SAFE_PATH="/usr/local/bin:/usr/bin:/bin:${PATH:-}"
 
 if [ "$RUN_AS_ROOT" = "1" ]; then
   if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ]; then
-    exec gosu node env PORT="$PORT" PATH="$SAFE_PATH" PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_PATH" /bin/sh "$@"
+    exec gosu node env \
+      PORT="$PORT" PATH="$SAFE_PATH" \
+      NODE_ENV="${NODE_ENV:-production}" \
+      OPENCLAW_STATE_DIR="${OPENCLAW_STATE_DIR:-/app/.openclaw}" \
+      PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_PATH" \
+      /bin/sh "$@"
   else
-    exec gosu node env PORT="$PORT" PATH="$SAFE_PATH" /bin/sh "$@"
+    exec gosu node env \
+      PORT="$PORT" PATH="$SAFE_PATH" \
+      NODE_ENV="${NODE_ENV:-production}" \
+      OPENCLAW_STATE_DIR="${OPENCLAW_STATE_DIR:-/app/.openclaw}" \
+      /bin/sh "$@"
   fi
 else
   exec "$@"
