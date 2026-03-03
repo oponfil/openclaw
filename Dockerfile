@@ -117,6 +117,12 @@ RUN mkdir -p /app/.openclaw
 COPY config/openclaw.railway.json /app/.openclaw/openclaw.json
 RUN chown -R node:node /app/.openclaw
 
+# BlockRunAI ClawRouter: smart LLM routing (41+ models, x402/USDC on Base)
+USER node
+ENV OPENCLAW_STATE_DIR=/app/.openclaw
+RUN node /app/openclaw.mjs plugins install @blockrun/clawrouter --pin
+USER root
+
 # Optional: allow container to install browser at runtime when run as root.
 RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gosu && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN chmod +x /app/scripts/docker/entrypoint-with-browser.sh

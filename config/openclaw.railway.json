@@ -8,5 +8,21 @@
     "telegram": {
       "allowFrom": ["120495009"]
     }
+  },
+  "plugins": {
+    "enabled": true,
+    "allow": ["clawrouter"],
+    "entries": {
+      "clawrouter": {
+        "enabled": true
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "blockrun/auto"
+      }
+    }
   }
 }
