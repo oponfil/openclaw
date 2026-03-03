@@ -9,7 +9,7 @@ const dockerfilePath = join(repoRoot, "Dockerfile");
 describe("Dockerfile", () => {
   it("installs optional browser dependencies after pnpm install", async () => {
     const dockerfile = await readFile(dockerfilePath, "utf8");
-    const installIndex = dockerfile.indexOf("RUN pnpm install --frozen-lockfile");
+    const installIndex = dockerfile.indexOf("pnpm install --frozen-lockfile");
     const browserArgIndex = dockerfile.indexOf("ARG OPENCLAW_INSTALL_BROWSER");
 
     expect(installIndex).toBeGreaterThan(-1);
@@ -26,5 +26,18 @@ describe("Dockerfile", () => {
     expect(dockerfile).toContain("gosu");
     expect(dockerfile).toContain("entrypoint-with-browser.sh");
     expect(dockerfile).toMatch(/ENTRYPOINT\s+\[.*entrypoint-with-browser\.sh.*\]/);
+  });
+
+  it("normalizes plugin and agent paths permissions in image layers", async () => {
+    const dockerfile = await readFile(dockerfilePath, "utf8");
+    expect(dockerfile).toContain("for dir in /app/extensions /app/.agent /app/.agents");
+    expect(dockerfile).toContain('find "$dir" -type d -exec chmod 755 {} +');
+    expect(dockerfile).toContain('find "$dir" -type f -exec chmod 644 {} +');
+  });
+
+  it("Docker GPG fingerprint awk uses correct quoting for OPENCLAW_SANDBOX=1 build", async () => {
+    const dockerfile = await readFile(dockerfilePath, "utf8");
+    expect(dockerfile).toContain('== "fpr" {');
+    expect(dockerfile).not.toContain('\\"fpr\\"');
   });
 });
