@@ -649,9 +649,12 @@ export function createGatewayHttpServer(opts: {
           run: () => canvasHost.handleHttpRequest(req, res),
         });
       }
+      requestStages.push({
+        name: "gateway-probes",
+        run: () => handleGatewayProbeRequest(req, res, requestPath),
+      });
       // Plugin routes run before the Control UI SPA catch-all so explicitly
-      // registered plugin endpoints stay reachable. Core built-in gateway
-      // routes above still keep precedence on overlapping paths.
+      // registered plugin endpoints stay reachable.
       requestStages.push(
         ...buildPluginRequestStages({
           req,
@@ -687,11 +690,6 @@ export function createGatewayHttpServer(opts: {
             }),
         });
       }
-
-      requestStages.push({
-        name: "gateway-probes",
-        run: () => handleGatewayProbeRequest(req, res, requestPath),
-      });
 
       if (await runGatewayHttpRequestStages(requestStages)) {
         return;

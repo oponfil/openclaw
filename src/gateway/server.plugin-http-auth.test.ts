@@ -116,7 +116,7 @@ describe("gateway plugin HTTP auth boundary", () => {
     });
   });
 
-  test("does not shadow plugin routes mounted on probe paths", async () => {
+  test("does not let plugin routes shadow probe paths", async () => {
     const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
       const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
       if (pathname === "/healthz") {
@@ -135,8 +135,8 @@ describe("gateway plugin HTTP auth boundary", () => {
       run: async (server) => {
         const response = await sendRequest(server, { path: "/healthz" });
         expect(response.res.statusCode).toBe(200);
-        expect(response.getBody()).toBe(JSON.stringify({ ok: true, route: "plugin-health" }));
-        expect(handlePluginRequest).toHaveBeenCalledTimes(1);
+        expect(response.getBody()).toBe(JSON.stringify({ ok: true, status: "live" }));
+        expect(handlePluginRequest).toHaveBeenCalledTimes(0);
       },
     });
   });
