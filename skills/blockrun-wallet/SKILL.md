@@ -22,11 +22,13 @@ Trigger when the user asks for:
 
 ## What to do
 
-1. Run the script to get the real address and balance (do **not** invent or guess addresses):
+1. Run the script to get the real address and balance (do **not** invent or guess addresses). The script lives in the **same directory as this SKILL.md**, under `scripts/`. If you read this file from path `.../blockrun-wallet/SKILL.md`, run `.../blockrun-wallet/scripts/get_blockrun_deposit_address.sh` (replace the path prefix with the actual directory; e.g. `/app/skills/blockrun-wallet/scripts/get_blockrun_deposit_address.sh` when the skill is at `/app/skills/blockrun-wallet/SKILL.md`).
 
 ```bash
-{baseDir}/scripts/get_blockrun_deposit_address.sh
+<skill_dir>/scripts/get_blockrun_deposit_address.sh
 ```
+
+Where `<skill_dir>` is the directory containing this SKILL.md (strip `/SKILL.md` from the path you used to read this file).
 
 2. If the script prints an address: reply with that address and short instructions.
 3. If the script fails or reports "not found": tell the user to run `/wallet` in the same chat (Telegram/Discord) where the bot is connected, or run `npx @blockrun/clawrouter doctor` locally to see the wallet section.
