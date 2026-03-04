@@ -12,10 +12,10 @@
         "api": "openai-completions",
         "apiKey": "x402-proxy-handles-auth",
         "models": [
-          { "id": "auto" },
-          { "id": "eco" },
-          { "id": "premium" },
-          { "id": "free" }
+          { "id": "auto", "name": "auto" },
+          { "id": "eco", "name": "eco" },
+          { "id": "premium", "name": "premium" },
+          { "id": "free", "name": "free" }
         ]
       }
     }
