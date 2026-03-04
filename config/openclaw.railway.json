@@ -5,6 +5,21 @@
       "dangerouslyAllowHostHeaderOriginFallback": true
     }
   },
+  "models": {
+    "providers": {
+      "blockrun": {
+        "baseUrl": "http://127.0.0.1:8402/v1",
+        "api": "openai-completions",
+        "apiKey": "x402-proxy-handles-auth",
+        "models": [
+          { "id": "auto" },
+          { "id": "eco" },
+          { "id": "premium" },
+          { "id": "free" }
+        ]
+      }
+    }
+  },
   "channels": {
     "telegram": {
       "allowFrom": ["120495009"]
