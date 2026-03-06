@@ -1,6 +1,6 @@
 ---
 name: blockrun-wallet
-description: Show the real BlockRun/ClawRouter wallet address and balance for USDC top-up. Use when the user asks for wallet address for top-up, deposit address, where to send USDC, or how to fund BlockRun/ClawRouter.
+description: Show the real BlockRun/ClawRouter wallet address and balance for USDC top-up. Use when the user asks for wallet address for top-up, deposit address, where to send USDC, how to fund BlockRun/ClawRouter, or to check wallet balance.
 metadata:
   {
     "openclaw":
@@ -19,6 +19,7 @@ Trigger when the user asks for:
 - Wallet address for top-up or deposit
 - Where to send USDC for OpenClaw/BlockRun/ClawRouter
 - "Address for funding" / "Where to send USDC"
+- Wallet balance (e.g. "what's my balance", "check balance")
 
 ## What to do
 
