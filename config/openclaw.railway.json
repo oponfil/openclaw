@@ -21,9 +21,7 @@
     }
   },
   "channels": {
-    "telegram": {
-      "allowFrom": ["120495009"]
-    }
+    "telegram": {}
   },
   "plugins": {
     "enabled": true,
