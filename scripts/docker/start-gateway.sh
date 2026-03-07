@@ -8,25 +8,33 @@ const fs = require("node:fs");
 const path = require("node:path");
 const stateDir = (process.env.OPENCLAW_STATE_DIR || "/app/.openclaw").trim();
 const configPath = (process.env.OPENCLAW_CONFIG_PATH || `${stateDir}/openclaw.json`).trim();
-if (fs.existsSync(configPath)) {
-  process.exit(0);
-}
 const fallbackConfigCandidates = [
   "/app/.openclaw/openclaw.json",
   "/app/config/openclaw.railway.json",
 ];
+const fallbackExtensionsDir = "/app/.openclaw/extensions";
+const runtimeExtensionsDir = path.join(stateDir, "extensions");
 try {
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
-  const fallbackConfigPath = fallbackConfigCandidates.find((p) => fs.existsSync(p));
-  if (fallbackConfigPath) {
-    fs.copyFileSync(fallbackConfigPath, configPath);
-    console.log(`OpenClaw: bootstrapped config at ${configPath} from ${fallbackConfigPath}`);
-  } else {
-    fs.writeFileSync(configPath, "{}\n", "utf8");
-    console.log(`OpenClaw: created empty config at ${configPath} (no fallback template found)`);
+  if (!fs.existsSync(configPath)) {
+    const fallbackConfigPath = fallbackConfigCandidates.find((p) => fs.existsSync(p));
+    if (fallbackConfigPath) {
+      fs.copyFileSync(fallbackConfigPath, configPath);
+      console.log(`OpenClaw: bootstrapped config at ${configPath} from ${fallbackConfigPath}`);
+    } else {
+      fs.writeFileSync(configPath, "{}\n", "utf8");
+      console.log(`OpenClaw: created empty config at ${configPath} (no fallback template found)`);
+    }
+  }
+
+  if (!fs.existsSync(runtimeExtensionsDir) && fs.existsSync(fallbackExtensionsDir)) {
+    fs.cpSync(fallbackExtensionsDir, runtimeExtensionsDir, { recursive: true });
+    console.log(
+      `OpenClaw: bootstrapped extensions at ${runtimeExtensionsDir} from ${fallbackExtensionsDir}`,
+    );
   }
 } catch (err) {
-  console.warn(`OpenClaw: failed to bootstrap config (${String(err)}); continuing.`);
+  console.warn(`OpenClaw: failed to bootstrap state (${String(err)}); continuing.`);
 }
 '
 

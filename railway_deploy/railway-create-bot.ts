@@ -197,12 +197,18 @@ async function deleteVolumeBestEffort(token: string, volumeId: string): Promise<
       ),
   ];
 
-  for (const attempt of attempts) {
-    try {
-      await attempt();
-      return true;
-    } catch {
-      // try next variant
+  // Railway may need a short delay after service deletion before allowing volume removal.
+  for (let round = 1; round <= 5; round++) {
+    for (const attempt of attempts) {
+      try {
+        await attempt();
+        return true;
+      } catch {
+        // try next variant
+      }
+    }
+    if (round < 5) {
+      await sleep(1500 * round);
     }
   }
   return false;
@@ -546,15 +552,7 @@ async function main() {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("Provisioning failed:", msg);
-    if (volumeId) {
-      console.error("Attempting cleanup: deleting created volume", volumeId);
-      const volumeDeleted = await deleteVolumeBestEffort(token, volumeId);
-      if (volumeDeleted) {
-        console.error("Cleanup successful: volume deleted.");
-      } else {
-        console.error("Cleanup warning: could not delete volume automatically.");
-      }
-    }
+
     if (shouldDeleteServiceOnFailure && serviceId) {
       console.error("Attempting cleanup: deleting created service", serviceId);
       const deleted = await deleteServiceBestEffort(token, serviceId);
@@ -562,6 +560,16 @@ async function main() {
         console.error("Cleanup successful: service deleted.");
       } else {
         console.error("Cleanup failed: could not delete service automatically.");
+      }
+    }
+
+    if (volumeId) {
+      console.error("Attempting cleanup: deleting created volume", volumeId);
+      const volumeDeleted = await deleteVolumeBestEffort(token, volumeId);
+      if (volumeDeleted) {
+        console.error("Cleanup successful: volume deleted.");
+      } else {
+        console.error("Cleanup warning: could not delete volume automatically.");
       }
     }
     throw err;

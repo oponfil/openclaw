@@ -49,6 +49,8 @@
 
 Контейнер в Railway запускается от `root`, чтобы примонтированный volume (по умолчанию `/data`) был записываемым на этапе bootstrap и при runtime-записях состояния.
 
+При первом старте (и при пустом state) контейнер bootstrap-ит не только `openclaw.json`, но и `extensions` из шаблона образа в `OPENCLAW_STATE_DIR`, чтобы плагины из `plugins.allow` (например `clawrouter`) были доступны сразу.
+
 ### Рекомендуемые Shared Variables (сейчас)
 
 - `PORT` — порт сервиса в Railway (обычно Railway задаёт сам).
