@@ -26,7 +26,7 @@
  *   --repo               Для source=github: owner/repo (или RAILWAY_GITHUB_REPO; по умолчанию oponfil/openclaw)
  *   --branch             Ветка (по умолчанию main)
  *   --image              Для source=docker: образ, например openclaw/openclaw:latest
- *   --setup-password     SETUP_PASSWORD для /setup
+ *   --setup-password     SETUP_PASSWORD (опционально)
  *   --no-wait            Не ждать завершения деплоя
  */
 
@@ -163,13 +163,22 @@ async function deleteServiceBestEffort(token: string, serviceId: string): Promis
       ),
   ];
 
-  for (const attempt of attempts) {
-    try {
-      await attempt();
-      return true;
-    } catch {
-      // try next variant
+  let lastErr: string | null = null;
+  for (let round = 1; round <= 5; round++) {
+    for (const attempt of attempts) {
+      try {
+        await attempt();
+        return true;
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : String(e);
+      }
     }
+    if (round < 5) {
+      await sleep(2000 * round);
+    }
+  }
+  if (lastErr) {
+    console.error("Service delete last error:", lastErr.slice(0, 200));
   }
   return false;
 }
@@ -197,19 +206,23 @@ async function deleteVolumeBestEffort(token: string, volumeId: string): Promise<
       ),
   ];
 
-  // Railway may need a short delay after service deletion before allowing volume removal.
+  // Railway may need delay after service deletion before volume can be removed; API is often flaky (400).
+  let lastErr: string | null = null;
   for (let round = 1; round <= 5; round++) {
     for (const attempt of attempts) {
       try {
         await attempt();
         return true;
-      } catch {
-        // try next variant
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : String(e);
       }
     }
     if (round < 5) {
-      await sleep(1500 * round);
+      await sleep(3000 * round);
     }
+  }
+  if (lastErr) {
+    console.error("Volume delete last error:", lastErr.slice(0, 200));
   }
   return false;
 }
@@ -221,6 +234,26 @@ function extractRailwayTraceId(message: string): string | null {
 
 async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function probeServiceReadiness(baseUrl: string): Promise<string | null> {
+  const probes = ["/healthz", "/", "/openclaw", "/openclaw/"];
+  for (const probe of probes) {
+    try {
+      const res = await fetch(`${baseUrl}${probe}`, { redirect: "manual" });
+      // 2xx/3xx means app is serving traffic.
+      if (res.status >= 200 && res.status < 400) {
+        return `${probe} -> ${res.status}`;
+      }
+      // 401/403 still confirms the app stack is up and handling requests.
+      if (res.status === 401 || res.status === 403) {
+        return `${probe} -> ${res.status}`;
+      }
+    } catch {
+      // ignore transient dns/network failures and try next probe
+    }
+  }
+  return null;
 }
 
 async function createVolumeWithRetry(params: {
@@ -464,8 +497,8 @@ async function main() {
     }
 
     if (!noWait) {
-      const waitTimeoutMs = 1_800_000; // 30 min for first cold build in Railway
-      console.log("Waiting for deployment (polling every 15s, max 30 min)...");
+      const waitTimeoutMs = 900_000; // 15 min for first cold build in Railway
+      console.log("Waiting for deployment (polling every 15s, max 15 min)...");
       const deadline = Date.now() + waitTimeoutMs;
       let lastStatus = "";
       let ready = false;
@@ -522,32 +555,28 @@ async function main() {
           }
         }
 
-        // Always try direct health fallback; in health-only mode this is the primary readiness signal.
-        try {
-          const health = await fetch(`${url}/healthz`);
-          if (health.ok) {
-            console.log(
-              healthOnlyMode
-                ? "Health check passed in health-only mode."
-                : "Health check passed despite polling errors.",
-            );
-            ready = true;
-            break;
-          }
-        } catch {
-          // ignore transient network/dns failures and keep polling
+        // Always try HTTP readiness probes; in health-only mode this is the primary signal.
+        const readinessProbe = await probeServiceReadiness(url);
+        if (readinessProbe) {
+          console.log(
+            healthOnlyMode
+              ? `Readiness probe passed in health-only mode (${readinessProbe}).`
+              : `Readiness probe passed (${readinessProbe}).`,
+          );
+          ready = true;
+          break;
         }
       }
       if (!ready) {
-        throw new Error("Timed out waiting for deployment readiness (SUCCESS/healthz).");
+        throw new Error("Timed out waiting for deployment readiness (SUCCESS/HTTP probes).");
       }
     }
 
     shouldDeleteServiceOnFailure = false;
     console.log("\n---");
     console.log("OPENCLAW_GATEWAY_TOKEN (сохраните для входа в Control UI / API):", gatewayToken);
-    console.log("Control UI:", `${url}/openclaw`);
-    console.log("Setup wizard:", `${url}/setup`);
+    // Control UI по умолчанию в корне домена; при gateway.controlUi.basePath="/openclaw" — тогда /openclaw
+    console.log("Control UI:", url);
     console.log("Домен начнёт отвечать после завершения первого деплоя (~10 мин). Статус — в дашборде Railway.");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -558,6 +587,11 @@ async function main() {
       const deleted = await deleteServiceBestEffort(token, serviceId);
       if (deleted) {
         console.error("Cleanup successful: service deleted.");
+        // Give Railway time to detach volume before volumeDelete.
+        if (volumeId) {
+          console.error("Waiting 10s before volume cleanup...");
+          await sleep(10_000);
+        }
       } else {
         console.error("Cleanup failed: could not delete service automatically.");
       }
