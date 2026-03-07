@@ -127,10 +127,11 @@ RUN chown -R node:node /app/.openclaw
 
 RUN chmod +x /app/scripts/docker/entrypoint-with-browser.sh /app/scripts/docker/start-gateway.sh
 
-# Run gateway directly as node in cloud deployments.
-# Chromium is preinstalled at build time (OPENCLAW_INSTALL_BROWSER=1), so
-# runtime root+gosu indirection is unnecessary and can break startup env.
-USER node
+# Run gateway as root in Railway/cloud deployments so mounted volumes (for example /data)
+# remain writable during bootstrap and runtime config overlays.
+# Chromium is preinstalled at build time (OPENCLAW_INSTALL_BROWSER=1), so no
+# runtime package installation is needed.
+USER root
 
 # start-gateway.sh sets PORT from env (Railway probes $PORT) and starts the gateway.
 HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \

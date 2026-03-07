@@ -47,6 +47,8 @@
 
 В этой папке лежит скрипт `railway-create-bot.ts`, который через Railway GraphQL API создаёт сервис, **создаёт persistent volume**, задаёт переменные, создаёт домен и запускает деплой. Переменные окружения для нового сервиса берутся из **Shared Variables** проекта (например `PORT`, `OPENCLAW_GATEWAY_CONTROL_UI_DANGEROUSLY_DISABLE_DEVICE_AUTH` и т.д.); скрипт добавляет **OPENCLAW_GATEWAY_TOKEN**, выставляет `OPENCLAW_STATE_DIR` в mount path volume и при наличии добавляет **TELEGRAM_BOT_TOKEN** / **TELEGRAM_ALLOW_FROM**.
 
+Контейнер в Railway запускается от `root`, чтобы примонтированный volume (по умолчанию `/data`) был записываемым на этапе bootstrap и при runtime-записях состояния.
+
 ### Рекомендуемые Shared Variables (сейчас)
 
 - `PORT` — порт сервиса в Railway (обычно Railway задаёт сам).

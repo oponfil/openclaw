@@ -497,8 +497,12 @@ async function main() {
               throw new Error(`Deployment failed with status: ${status}`);
             }
           } catch (pollErr) {
-            consecutivePollingApiFailures += 1;
             const msg = pollErr instanceof Error ? pollErr.message : String(pollErr);
+            if (msg.startsWith("Deployment failed with status:")) {
+              // Propagate terminal deployment failures to outer cleanup logic.
+              throw pollErr instanceof Error ? pollErr : new Error(msg);
+            }
+            consecutivePollingApiFailures += 1;
             const traceId = extractRailwayTraceId(msg);
             console.warn(
               `Deployment status poll failed${traceId ? ` (traceId=${traceId})` : ""}; will retry: ${msg.slice(0, 180)}`,
